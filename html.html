@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Abuse Detector - Project 115</title>
+    <style>
+        body {
+            margin: 0; padding: 0; box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 750px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        h1 { text-align: center; color: #333; }
+        p { text-align: center; color: #666; margin-bottom: 30px; }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+        input, select {
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+        input:focus, select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            padding: 18px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover { background: #5a6fd8; }
+        #result {
+            margin-top: 30px;
+            padding: 30px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            border-radius: 15px;
+            display: none;
+        }
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: white;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API Traffic Classifier</h1>
+        <p>Bot hai ya Human? 2 second mein pata chal jayega!</p>
+
+        <div class="grid">
+            <input type="number" step="any" id="inter_api_duration" placeholder="Inter API Duration (sec)">
+            <input type="number" step="any" id="api_uniqueness" placeholder="API Uniqueness (0-1)">
+            <input type="number" id="sequence_length" placeholder="Sequence Length">
+            <input type="number" step="any" id="vsession_duration" placeholder="Session Duration (min)">
+            <input type="number" id="num_sessions" placeholder="Number of Sessions">
+            <input type="number" id="num_users" placeholder="Number of Users">
+            <input type="number" id="num_unique_apis" placeholder="Unique APIs Called">
+            <select id="ip_type">
+                <option value="">Select IP Type</option>
+                <option value="datacenter">Datacenter</option>
+                <option value="residential">Residential</option>
+                <option value="mobile">Mobile</option>
+                <option value="vpn">VPN / Proxy</option>
+                <option value="public_proxy">Public Proxy</option>
+                <option value="tor">Tor</option>
+            </select>
+        </div>
+
+        <button onclick="predict()">Detect Now</button>
+
+        <div id="result"></div>
+    </div>
+
+    <footer>Made with love by Aimay – Project 115</footer>
+
+    <script>
+        function predict() {
+            const data = {
+                inter_api_duration: document.getElementById('inter_api_duration').value || 0,
+                api_uniqueness: document.getElementById('api_uniqueness').value || 0,
+                sequence_length: document.getElementById('sequence_length').value || 0,
+                vsession_duration: document.getElementById('vsession_duration').value || 0,
+                num_sessions: document.getElementById('num_sessions').value || 0,
+                num_users: document.getElementById('num_users').value || 0,
+                num_unique_apis: document.getElementById('num_unique_apis').value || 0,
+                ip_type: document.getElementById('ip_type').value
+            };
+
+            if (!data.ip_type) {
+                alert("IP Type toh select karo pehle!");
+                return;
+            }
+
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('result').innerHTML = '<p>Detecting...</p>';
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                const r = document.getElementById('result');
+                if (res.status === 'success') {
+                    r.innerHTML = `<h2>${res.result}</h2><p>Confidence: <strong>${res.confidence}</strong></p>`;
+                    r.style.background = res.result.includes('Bot') ? '#ffebee' : '#e8f5e8';
+                    r.style.color = res.result.includes('Bot') ? '#c62828' : '#2e7d32';
+                } else {
+                    r.innerHTML = `<p style="color:red;">Error: ${res.message}</p>`;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
